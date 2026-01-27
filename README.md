@@ -23,6 +23,10 @@ Edit the constants at the top of `generate_calendar.py`:
 - `WEEKEND_BG_HEX` - Saturday/Sunday column background color
 - Font sizes are set in the `create_month_slide` function (title is 44pt, day headers 14pt, day numbers 18pt)
 
+## Sample Output
+
+A pre-generated [2026 calendar](docs/2026_Calendar.pptx) is included so you can see what the output looks like before running the script.
+
 ## Output
 
 The generated PowerPoint has:

@@ -1,2 +1,2 @@
-# Generated output
-*.pptx
+# Generated output (except sample in docs/)
+/*.pptx
