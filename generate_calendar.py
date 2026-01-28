@@ -49,6 +49,35 @@ def set_cell_fill(cell, hex_color):
     tcPr.append(solidFill)
 
 
+def set_cell_borders(cell, hex_color, width_pt=1):
+    """Set all four borders of a table cell to a solid color."""
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+
+    # Width in EMUs (English Metric Units) - 12700 EMUs per point
+    width_emu = int(width_pt * 12700)
+
+    # Border element names for all four sides
+    border_names = ['lnL', 'lnR', 'lnT', 'lnB']  # left, right, top, bottom
+
+    # Remove existing border elements
+    for child in list(tcPr):
+        for name in border_names:
+            if name in child.tag:
+                tcPr.remove(child)
+                break
+
+    # Add borders for all four sides
+    for border_name in border_names:
+        border_xml = parse_xml(
+            f'<a:{border_name} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" w="{width_emu}" cap="flat" cmpd="sng" algn="ctr">'
+            f'<a:solidFill><a:srgbClr val="{hex_color}"/></a:solidFill>'
+            f'<a:prstDash val="solid"/>'
+            f'</a:{border_name}>'
+        )
+        tcPr.append(border_xml)
+
+
 def create_month_slide(prs, month):
     """Create a slide for a single month."""
     slide_layout = prs.slide_layouts[6]  # Blank layout
@@ -57,46 +86,54 @@ def create_month_slide(prs, month):
     # Get the calendar for this month
     cal = calendar.monthcalendar(YEAR, month)
 
-    # Add month/year title
-    title_box = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(9), Inches(0.8))
+    # Add month/year title - compact, left-aligned
+    title_box = slide.shapes.add_textbox(Inches(0.2), Inches(0.1), Inches(5), Inches(0.4))
     title_frame = title_box.text_frame
     title_para = title_frame.paragraphs[0]
     title_para.text = f"{MONTH_NAMES[month-1]} {YEAR}"
-    title_para.font.size = Pt(44)
+    title_para.font.size = Pt(24)
     title_para.font.bold = True
     title_para.font.color.rgb = HEADER_BG
-    title_para.alignment = PP_ALIGN.CENTER
+    title_para.alignment = PP_ALIGN.LEFT
 
     # Table dimensions
     rows = len(cal) + 1  # +1 for header row
     cols = 7
 
-    # Table position and size
-    left = Inches(0.5)
-    top = Inches(1.2)
-    width = Inches(9)
-    height = Inches(5.8)
+    # Table position and size - maximize space, minimal margins
+    left = Inches(0.2)
+    top = Inches(0.6)
+    width = Inches(9.6)
+    height = Inches(6.8)
 
     table = slide.shapes.add_table(rows, cols, left, top, width, height).table
 
     # Set column widths (equal)
-    col_width = Inches(9 / 7)
+    col_width = Inches(9.6 / 7)
     for i in range(cols):
         table.columns[i].width = col_width
 
-    # Header row with day names
+    # Set row heights - small header, large day rows
+    header_height = Inches(0.35)
+    day_row_height = Inches((6.8 - 0.35) / len(cal))
+    table.rows[0].height = header_height
+    for i in range(1, rows):
+        table.rows[i].height = day_row_height
+
+    # Header row with day names - compact
     for i, day_name in enumerate(DAY_NAMES):
         cell = table.cell(0, i)
         cell.text = day_name
         para = cell.text_frame.paragraphs[0]
-        para.font.size = Pt(14)
+        para.font.size = Pt(10)
         para.font.bold = True
         para.font.color.rgb = WHITE
         para.alignment = PP_ALIGN.CENTER
         cell.vertical_anchor = MSO_ANCHOR.MIDDLE
         set_cell_fill(cell, HEADER_BG_HEX)
+        set_cell_borders(cell, HEADER_BG_HEX)
 
-    # Fill in the days
+    # Fill in the days - number in top-right corner
     for week_idx, week in enumerate(cal):
         row_idx = week_idx + 1
         for day_idx, day in enumerate(week):
@@ -107,16 +144,19 @@ def create_month_slide(prs, month):
                 cell.text = ""
 
             para = cell.text_frame.paragraphs[0]
-            para.font.size = Pt(18)
+            para.font.size = Pt(11)
             para.font.color.rgb = BLACK
-            para.alignment = PP_ALIGN.CENTER
-            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            para.alignment = PP_ALIGN.RIGHT  # Number in top-right
+            cell.vertical_anchor = MSO_ANCHOR.TOP  # Number at top
 
             # Weekend columns (Saturday=5, Sunday=6) get light gray background
             if day_idx >= 5:
                 set_cell_fill(cell, WEEKEND_BG_HEX)
             else:
                 set_cell_fill(cell, WHITE_HEX)
+
+            # Dark grid borders
+            set_cell_borders(cell, HEADER_BG_HEX)
 
     return slide
 
