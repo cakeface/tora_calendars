@@ -27,6 +27,8 @@ Edit the constants at the top of `generate_calendar.py`:
 
 A pre-generated [2026 calendar](docs/2026_Calendar.pptx) is included so you can see what the output looks like before running the script.
 
+![Calendar screenshot showing January 2026](docs/screenshot.png)
+
 ## Output
 
 The generated PowerPoint has:
